@@ -1,4 +1,6 @@
 # Assembler
+[![Build Status](https://travis-ci.org/benhamill/assembler.png)](https://travis-ci.org/benhamill/assembler)
+[![Code Climate](https://codeclimate.com/github/benhamill/assembler.png)](https://codeclimate.com/github/benhamill/assembler)
 
 An [assembler swarm](http://en.wikipedia.org/wiki/Molecular_assembler) is a
 bunch of nanomachines that can build [almost anything](http://en.wikipedia.org/wiki/Molecular_nanotechnology#Assemblers_versus_nanofactories).
