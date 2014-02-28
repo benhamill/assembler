@@ -41,7 +41,7 @@ describe Assembler do
       it "uses default values for missing parameters (method arguments)" do
         built_object = subject.new(foo: 'foo')
 
-        expect(subject.instance_variable_get(:@bar)).to eq('bar')
+        expect(built_object.instance_variable_get(:@bar)).to eq('bar')
       end
 
       it "uses default values for missing parameters (block)" do
@@ -49,14 +49,14 @@ describe Assembler do
           builder.foo = 'foo'
         end
 
-        expect(subject.instance_variable_get(:@bar)).to eq('bar')
+        expect(built_object.instance_variable_get(:@bar)).to eq('bar')
       end
 
       it "holds onto the parameters (method arguments)" do
         built_object = subject.new(foo: 'baz', bar: 'qux')
 
-        expect(subject.instance_variable_get(:@foo)).to eq('baz')
-        expect(subject.instance_variable_get(:@bar)).to eq('qux')
+        expect(built_object.instance_variable_get(:@foo)).to eq('baz')
+        expect(built_object.instance_variable_get(:@bar)).to eq('qux')
       end
 
       it "holds onto the parameters (block)" do
@@ -65,8 +65,8 @@ describe Assembler do
           builder.bar = 'qux'
         end
 
-        expect(subject.instance_variable_get(:@foo)).to eq('baz')
-        expect(subject.instance_variable_get(:@bar)).to eq('qux')
+        expect(built_object.instance_variable_get(:@foo)).to eq('baz')
+        expect(built_object.instance_variable_get(:@bar)).to eq('qux')
       end
 
       it "ignores un-named parameters in method arguments" do
