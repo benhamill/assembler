@@ -12,7 +12,68 @@ care of storing the parameters and gives you private accessors, too.
 
 ## Usage
 
-TODO: Write usage instructions here
+You use it like this:
+
+```ruby
+class AwesomeThing
+  extend Assembler
+
+  assembler_initializer :required_param, optional_param: 'default value'
+
+  # Additional business logic here...
+end
+```
+
+Then you can instantiate your object with either an options hash or via a block.
+For example:
+
+```ruby
+# These two are equivalent:
+AwesomeThing.new(required_param: 'specialness')
+AwesomeThing.new do |aw|
+  aw.required_param = 'specialness'
+end
+
+# These two are equivalent:
+AwesomeThing.new(required_param: 'specialness', optional_param: 'override')
+AwesomeThing.new do |aw|
+  aw.required_param = 'specialness'
+  aw.optional_param = 'override'
+end
+```
+
+This enables some trickery when you're dealing with a world of uncertainty:
+
+```ruby
+class Foo
+  extend Assembler
+  assembler_initializer :name, :awesome, favorite_color: 'green'
+
+  def awesome?
+    !!awesome
+  end
+end
+
+def delegating_method(name, awesome=true, favorite_color=nil)
+  Foo.new do |foo|
+    foo.name = name
+    foo.awesome = awesome
+
+    foo.favorite_color = favorite_color if favorite_color
+  end
+end
+```
+
+The delegating method, here, is empowered to reverse the default for `awesome`,
+but then respect the default for `favorite_color` if the calling code doesn't
+pass anything in (assuming `nil` is unacceptable). It also respects if `awesome`
+has a falsey value passed in.
+
+Especially when you have objects with a lot of potential arguments being passed
+in and don't want to pass keys that you don't have any information about (did
+my caller pass in this `nil`, or is it my own default?), you can use conditional
+logic in the block, rather than conditionally build of a hash just to pass to a
+constructor method.
 
 
 ## Contributing
