@@ -1,4 +1,5 @@
 require "assembler/builder"
+require "assembler/parameters"
 
 module Assembler
   module Initializer
@@ -7,17 +8,15 @@ module Assembler
 
       yield builder if block_given?
 
-      full_options = options.merge(builder.to_h)
+      full_options = Assembler::Parameters.new(options.merge(builder.to_h))
 
       missing_required_params = []
 
       self.class.required_params.each do |param_name|
         instance_variable_set(
           :"@#{param_name}",
-          full_options.fetch(param_name.to_sym) do
-            full_options.fetch(param_name.to_s) do
-              missing_required_params << param_name
-            end
+          full_options.fetch(param_name) do
+            missing_required_params << param_name
           end
         )
       end
@@ -27,10 +26,8 @@ module Assembler
       self.class.optional_params.each do |param_name, default_value|
         instance_variable_set(
           :"@#{param_name}",
-          full_options.fetch(param_name.to_sym) do
-            full_options.fetch(param_name.to_s) do
-              default_value
-            end
+          full_options.fetch(param_name) do
+            default_value
           end
         )
       end
