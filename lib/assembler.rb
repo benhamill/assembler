@@ -1,5 +1,4 @@
 require "assembler/version"
-require 'forwardable'
 
 module Assembler
   attr_reader :required_params, :optional_params, :all_param_names
