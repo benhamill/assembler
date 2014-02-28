@@ -17,6 +17,12 @@ describe Assembler do
 
         expect(built_object.instance_variables).to_not include(:@foo, :@bar)
       end
+
+      it "doesn't have methods on the builder object" do
+        subject.new do |builder|
+          expect(builder).to_not respond_to(:foo)
+        end
+      end
     end
 
     context "with a mix of required and optional parameters" do
@@ -32,23 +38,49 @@ describe Assembler do
         expect { subject.new }.to raise_error(ArgumentError)
       end
 
-      it "uses default values for missing parameters" do
+      it "uses default values for missing parameters (method arguments)" do
         built_object = subject.new(foo: 'foo')
 
         expect(subject.instance_variable_get(:@bar)).to eq('bar')
       end
 
-      it "holds onto the parameters" do
+      it "uses default values for missing parameters (block)" do
+        built_object = subject.new do |builder|
+          builder.foo = 'foo'
+        end
+
+        expect(subject.instance_variable_get(:@bar)).to eq('bar')
+      end
+
+      it "holds onto the parameters (method arguments)" do
         built_object = subject.new(foo: 'baz', bar: 'qux')
 
         expect(subject.instance_variable_get(:@foo)).to eq('baz')
         expect(subject.instance_variable_get(:@bar)).to eq('qux')
       end
 
-      it "ignores un-named parameters" do
-        built_object = subject.new(baz: 'baz')
+      it "holds onto the parameters (block)" do
+        built_object = subject.new do |builder|
+          builder.foo = 'baz'
+          builder.bar = 'qux'
+        end
+
+        expect(subject.instance_variable_get(:@foo)).to eq('baz')
+        expect(subject.instance_variable_get(:@bar)).to eq('qux')
+      end
+
+      it "ignores un-named parameters in method arguments" do
+        built_object = subject.new(foo: 'bar', baz: 'baz')
 
         expect(built_object.instance_variables).to_not include(:@baz)
+      end
+
+      it "doesn't create builder methods for un-named parameters" do
+        expect {
+          subject.new do |builder|
+            builder.baz = 'baz'
+          end
+        }.to raise_error(NoMethodError)
       end
     end
   end
