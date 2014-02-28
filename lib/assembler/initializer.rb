@@ -8,31 +8,29 @@ module Assembler
 
       yield builder if block_given?
 
-      full_options = Assembler::Parameters.new(options.merge(builder.to_h))
+      @full_options = Assembler::Parameters.new(options.merge(builder.to_h))
 
       missing_required_params = []
 
       self.class.required_params.each do |param_name|
-        remember_value_or(full_options, param_name) do
-          missing_required_params << param_name
-        end
+        remember_value_or(param_name) { missing_required_params << param_name }
+      end
+
+      self.class.optional_params.each do |param_name, default_value|
+        remember_value_or(param_name) { default_value }
       end
 
       raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
-
-      self.class.optional_params.each do |param_name, default_value|
-        remember_value_or(full_options, param_name) do
-          default_value
-        end
-      end
     end
 
     private
 
-    def remember_value_or(params, param_name, &block)
+    attr_reader :full_options
+
+    def remember_value_or(param_name, &block)
       instance_variable_set(
         :"@#{param_name}",
-        params.fetch(param_name) do
+        full_options.fetch(param_name) do
           block.call
         end
       )
