@@ -2,13 +2,13 @@ require 'spec_helper'
 require 'assembler'
 
 describe Assembler do
-  describe "#assembler_initializer" do
+  describe "#assemble_from" do
     context "without parameters" do
       subject do
         Class.new do
           extend Assembler
 
-          assembler_initializer
+          assemble_from
         end
       end
 
@@ -30,7 +30,7 @@ describe Assembler do
         Class.new do
           extend Assembler
 
-          assembler_initializer :foo, bar: 'bar'
+          assemble_from :foo, bar: 'bar'
         end
       end
 

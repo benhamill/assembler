@@ -20,7 +20,7 @@ You use it like this:
 class AwesomeThing
   extend Assembler
 
-  assembler_initializer :required_param, optional_param: 'default value'
+  assemble_from :required_param, optional_param: 'default value'
 
   # Additional business logic here...
 end
@@ -49,7 +49,7 @@ This enables some trickery when you're dealing with a world of uncertainty:
 ```ruby
 class Foo
   extend Assembler
-  assembler_initializer :name, :awesome, favorite_color: 'green'
+  assemble_from :name, :awesome, favorite_color: 'green'
 
   def awesome?
     !!awesome
