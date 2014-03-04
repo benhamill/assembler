@@ -101,7 +101,7 @@ we want to make it easy to pop off slight variations on what we consider to be a
 
 ``` ruby
 module ELBFactory
-  def self.make_me_an_elb(subnet_ids=nil, availability_zones=nil, name_prefix='', instance_ids=[], security_groups=[], instance_port=8000, health_check_path='/')
+  def self.make_me_an_elb(subnet_ids=nil, availability_zones=nil, name_prefix='', instance_ids=[], security_groups=[])
     AmazonELB.new do |elb|
       elb.name = name
       elb.load_balancer_name = name
@@ -109,7 +109,7 @@ module ELBFactory
       elb.instance_ids = instance_ids
 
       elb.health_check =  HealthCheck.new (
-        target: "HTTP:#{instance_port}#{health_check_path}",
+        target: 'HTTP:8000/',
         healthy_threshold: '3',
         unhealthy_threshold: '5',
         interval: '30',
