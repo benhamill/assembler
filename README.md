@@ -103,8 +103,8 @@ we want to make it easy to pop off slight variations on what we consider to be a
 module ELBFactory
   def self.make_me_an_elb(subnet_ids=nil, availability_zones=nil, name_prefix='', instance_ids=[], security_groups=[])
     AmazonELB.new do |elb|
-      elb.name = name
-      elb.load_balancer_name = name
+      elb.name = name(name_prefix)
+      elb.load_balancer_name = name(name_prefix)
       elb.security_groups = security_groups
       elb.instance_ids = instance_ids
 
