@@ -136,7 +136,7 @@ end
 ```
 
 Note the `if`/`else` block near the end of the initialization block. If the
-initialization method only took hashes, you could either have to wrap object
+initialization method only took hashes, you would either have to wrap object
 creation in an `if`/`else` and repeat all the constructor arguments that were
 shared between the two cases, or else pre-construct your argument hash, which
 would look similar to the above, but require you to assign an intermediate
