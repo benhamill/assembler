@@ -17,10 +17,10 @@ care of storing the parameters and gives you private accessors, too.
 You use it like this:
 
 ```ruby
-class AwesomeThing
+class IMAPConnection
   extend Assembler
 
-  assemble_from :required_param, optional_param: 'default value'
+  assemble_from :hostname, use_ssl: true, port: nil
 
   # Additional business logic here...
 end
@@ -31,51 +31,116 @@ For example:
 
 ```ruby
 # These two are equivalent:
-AwesomeThing.new(required_param: 'specialness')
-AwesomeThing.new do |aw|
-  aw.required_param = 'specialness'
+IMAPConnection.new(hostname: 'imap.example.com')
+IMAPConnection.new do |aw|
+  aw.required_param = 'imap.example.com'
 end
 
 # These two are equivalent:
-AwesomeThing.new(required_param: 'specialness', optional_param: 'override')
-AwesomeThing.new do |aw|
-  aw.required_param = 'specialness'
-  aw.optional_param = 'override'
+IMAPConnection.new(hostname: 'imap.example.com', use_ssl: false)
+IMAPConnection.new do |aw|
+  aw.hostname = 'imap.example.com'
+  aw.use_ssl = false
 end
 ```
 
-This enables some trickery when you're dealing with a world of uncertainty:
+Note that when we set `use_ssl` to `false`, the code respects that, rather than
+over-writing anything falsey with the default. If you don't want that, override
+it like with `port`, below.
+
+You get private `attr_reader`s for the parameters you specify, but you can
+always override them, if you like. You might have this lower down in your
+`IMAPConnection` class:
 
 ```ruby
-class Foo
-  extend Assembler
-  assemble_from :name, :awesome, favorite_color: 'green'
+class IMAPConnection
+  attr_reader :hostname # makes `hostname` public
 
-  def awesome?
-    !!awesome
+  def ssl?
+    !!use_ssl
   end
-end
 
-def delegating_method(name, awesome=true, favorite_color=nil)
-  Foo.new do |foo|
-    foo.name = name
-    foo.awesome = awesome
-
-    foo.favorite_color = favorite_color if favorite_color
+  def port
+    @port ||= ssl? ? 993 : 143
   end
 end
 ```
 
-The delegating method, here, is empowered to reverse the default for `awesome`,
-but then respect the default for `favorite_color` if the calling code doesn't
-pass anything in (assuming `nil` is unacceptable). It also respects if `awesome`
-has a falsey value passed in.
+These various syntaxes enable some trickery when you're dealing with a world of
+uncertainty. Let's look at a more complicated example.
 
-Especially when you have objects with a lot of potential arguments being passed
-in and don't want to pass keys that you don't have any information about (did
-my caller pass in this `nil`, or is it my own default?), you can use conditional
-logic in the block, rather than conditionally build of a hash just to pass to a
-constructor method.
+Say we've got a class that lets us describe an Elastic Load Balancer for Amazon
+Web Services. There's a lot of complexity in what each of these arguments might
+be, but the key thing for our example is this: If you have `subnets`, you
+shouldn't have `availability_zones` and if you have `availability_zones`, you
+shouldn't have `subnets`. And, importantly, you shouldn't send in extraneous
+keys.
+
+```ruby
+class AmazonELB
+  extend Assembler
+  assemble_from(
+    :name,
+    load_balancer_name: nil,
+    health_check: nil,
+    listeners: nil,
+    security_groups: nil,
+    instances: nil,
+    subnets: nil,
+    availability_zones: nil,
+  )
+
+  # Additional, complex business logic...
+end
+```
+
+Now, since there's a lot of complexity in what each of these arguments might be,
+say we've developed some best-practices about what each of them should be. And
+we want to make it easy to pop off slight variations on what we consider to be a
+"standard" ELB.
+
+``` ruby
+module ELBFactory
+  def self.make_me_an_elb(subnet_ids=nil, availability_zones=nil, name_prefix='', instance_ids=[], security_groups=[], instance_port=8000, health_check_path='/')
+    AmazonELB.new do |elb|
+      elb.name = name
+      elb.load_balancer_name = name
+      elb.security_groups = security_groups
+      elb.instance_ids = instance_ids
+
+      elb.health_check =  HealthCheck.new (
+        target: "HTTP:#{instance_port}#{health_check_path}",
+        healthy_threshold: '3',
+        unhealthy_threshold: '5',
+        interval: '30',
+        timeout: '5'
+      )
+      elb.listeners = [Listener.new(...), Listener.new(...)]
+
+      if subnet_ids
+        elb.subnets = subnet_ids
+      else
+        elb.availability_zones = availability_zones
+      end
+    end
+  end
+
+  def self.name(name_prefix)
+    "#{sanitize_for_name(name_prefix)}LoadBalancer"
+  end
+
+  def self.sanitize_for_name(string)
+    # ...
+  end
+end
+```
+
+Note that the `if`/`else` block near the end of the initialization block. If the
+initialization method only took hashes, you could either have to wrap object
+creation in an `if`/`else` and repeat all the constructor arguments that were
+shared between the two cases, or else pre-construct your argument hash, which
+would look similar to the above, but require you to assign an intermediate
+variable for no semantic benefit.
 
 
 ## Contributing
