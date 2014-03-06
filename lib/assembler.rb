@@ -3,12 +3,13 @@ require "assembler/initializer"
 
 module Assembler
   attr_reader :all_param_names
+  attr_writer :required_params, :optional_params
 
   def assemble_from(*required, **optional)
     include Assembler::Initializer
 
-    required_params.push(*required)
-    optional_params.merge!(optional)
+    self.required_params += required
+    self.optional_params = optional_params.merge(optional)
 
     @all_param_names = (required_params + optional_params.keys).map(&:to_sym)
     attr_reader *all_param_names
