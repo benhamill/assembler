@@ -33,7 +33,7 @@ For example:
 # These two are equivalent:
 IMAPConnection.new(hostname: 'imap.example.com')
 IMAPConnection.new do |aw|
-  aw.required_param = 'imap.example.com'
+  aw.hostname = 'imap.example.com'
 end
 
 # These two are equivalent:
