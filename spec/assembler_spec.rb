@@ -83,5 +83,26 @@ describe Assembler do
         }.to raise_error(NoMethodError)
       end
     end
+
+    context "when called more than once" do
+      subject do
+        Class.new do
+          extend Assembler
+
+          assemble_from :foo
+          assemble_from bar: 'bar'
+        end
+      end
+
+      it "still takes both arguments" do
+        built_object = subject.new do |builder|
+          builder.foo = 'baz'
+          builder.bar = 'qux'
+        end
+
+        expect(built_object.instance_variable_get(:@foo)).to eq('baz')
+        expect(built_object.instance_variable_get(:@bar)).to eq('qux')
+      end
+    end
   end
 end
