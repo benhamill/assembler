@@ -4,7 +4,10 @@ require "assembler/initializer"
 module Assembler
   attr_reader :required_params, :optional_params, :all_param_names
 
-  def assemble_from(*required, **optional)
+  def assemble_from(*args)
+    optional = args.last.is_a?(Hash) ? args.pop : {}
+    required = args
+
     include Assembler::Initializer
 
     @required_params = required
