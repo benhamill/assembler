@@ -2,7 +2,6 @@ require "assembler/version"
 require "assembler/initializer"
 
 module Assembler
-  attr_reader :all_param_names
   attr_writer :required_params, :optional_params
 
   def assemble_from(*required, **optional)
@@ -11,7 +10,6 @@ module Assembler
     self.required_params += required
     self.optional_params = optional_params.merge(optional)
 
-    @all_param_names = (required_params + optional_params.keys).map(&:to_sym)
     attr_reader *all_param_names
     private *all_param_names
   end
@@ -29,5 +27,9 @@ module Assembler
 
   def optional_params
     @optional_params ||= {}
+  end
+
+  def all_param_names
+    (required_params + optional_params.keys).map(&:to_sym)
   end
 end
