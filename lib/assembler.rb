@@ -5,16 +5,13 @@ module Assembler
   attr_writer :required_params, :optional_params
 
   def assemble_from(*args)
-    optional = args.last.is_a?(Hash) ? args.pop : {}
-    required = args
+    ensure_setup do
+      optional = args.last.is_a?(Hash) ? args.pop : {}
+      required = args
 
-    include Assembler::Initializer
-
-    self.required_params += required
-    self.optional_params = optional_params.merge(optional)
-
-    attr_reader *all_param_names
-    private *all_param_names
+      self.required_params += required
+      self.optional_params = optional_params.merge(optional)
+    end
   end
   alias_method :assemble_with, :assemble_from
 
@@ -34,5 +31,13 @@ module Assembler
 
   def all_param_names
     (required_params + optional_params.keys).map(&:to_sym)
+  end
+
+  def ensure_setup
+    yield
+  ensure
+    include Assembler::Initializer
+    attr_reader *all_param_names
+    private *all_param_names
   end
 end
