@@ -4,6 +4,8 @@ require "assembler/parameters"
 module Assembler
   module Initializer
     def initialize(options={})
+      instance_eval(&self.class.before_block) if self.class.before_block
+
       builder = Assembler::Builder.new(*self.class.all_param_names)
 
       yield builder if block_given?

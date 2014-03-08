@@ -3,6 +3,7 @@ require "assembler/initializer"
 
 module Assembler
   attr_writer :required_params, :optional_params
+  attr_reader :before_block
 
   def assemble_from(*args)
     ensure_setup do
@@ -19,6 +20,12 @@ module Assembler
     caller_file, caller_line, _ = caller.first.split(':')
     warn "The `assembler_initializer` method is deprecated and will be phased out in version 2.0. Please use `assemble_from` instead. Called from #{caller_file}:#{caller_line}."
     assemble_from(*args)
+  end
+
+  def before_assembly(&block)
+    ensure_setup do
+      @before_block = block
+    end
   end
 
   def required_params
