@@ -23,6 +23,8 @@ module Assembler
       end
 
       raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
+
+      instance_eval(&self.class.after_block) if self.class.after_block
     end
 
     private

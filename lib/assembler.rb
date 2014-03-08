@@ -3,7 +3,7 @@ require "assembler/initializer"
 
 module Assembler
   attr_writer :required_params, :optional_params
-  attr_reader :before_block
+  attr_reader :before_block, :after_block
 
   def assemble_from(*args)
     ensure_setup do
@@ -25,6 +25,12 @@ module Assembler
   def before_assembly(&block)
     ensure_setup do
       @before_block = block
+    end
+  end
+
+  def after_assembly(&block)
+    ensure_setup do
+      @after_block = block
     end
   end
 
