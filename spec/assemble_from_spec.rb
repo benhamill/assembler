@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'assembler'
 
 describe Assembler do
   describe "#assemble_from" do
