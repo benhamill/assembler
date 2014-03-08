@@ -2,7 +2,7 @@ require "assembler/version"
 require "assembler/initializer"
 
 module Assembler
-  attr_reader :required_params, :optional_params, :all_param_names
+  attr_writer :required_params, :optional_params
 
   def assemble_from(*args)
     optional = args.last.is_a?(Hash) ? args.pop : {}
@@ -10,9 +10,8 @@ module Assembler
 
     include Assembler::Initializer
 
-    @required_params = required
-    @optional_params = optional
-    @all_param_names = (required + optional.keys).map(&:to_sym)
+    self.required_params += required
+    self.optional_params = optional_params.merge(optional)
 
     attr_reader *all_param_names
     private *all_param_names
@@ -23,5 +22,17 @@ module Assembler
     caller_file, caller_line, _ = caller.first.split(':')
     warn "The `assembler_initializer` method is deprecated and will be phased out in version 2.0. Please use `assemble_from` instead. Called from #{caller_file}:#{caller_line}."
     assemble_from(*args)
+  end
+
+  def required_params
+    @required_params ||= []
+  end
+
+  def optional_params
+    @optional_params ||= {}
+  end
+
+  def all_param_names
+    (required_params + optional_params.keys).map(&:to_sym)
   end
 end
