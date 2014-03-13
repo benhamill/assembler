@@ -7,14 +7,25 @@ bunch of nanomachines that can build [almost anything](http://en.wikipedia.org/w
 
 Assembler is a library that gives you a DSL to describe a super-handy
 initializer pattern. You specify the parameters your object should take and
-Assembler give you an initializer that takes an options hash as well as yielding
-a [builder object](http://c2.com/cgi/wiki?BuilderPattern) to a block. It takes
-care of storing the parameters and gives you private accessors, too.
+Assembler gives you an initializer that takes an options hash as well as
+yielding a [builder object](http://c2.com/cgi/wiki?BuilderPattern) to a block.
+It takes care of storing the parameters and gives you private accessors, too.
+
+## Contents
+
+* [Usage](#usage)
+  * [assemble_from](#assemble_from)
+  * [Before and After Hooks](#before-and-after-hooks)
+* [Contributing](#contributing)
 
 
 ## Usage
 
-You use it like this:
+### `assemble_from`
+
+This is the core of Assembler. The basic use case it to pass in required
+parameters followed by optional parameters (and their defaults). Take this
+simple example:
 
 ```ruby
 class IMAPConnection
@@ -26,8 +37,8 @@ class IMAPConnection
 end
 ```
 
-Then you can instantiate your object with either an options hash or via a block.
-For example:
+This enables you to instantiate your object with either an options hash or via a
+block. For example:
 
 ```ruby
 # These two are equivalent:
@@ -42,9 +53,14 @@ IMAPConnection.new do |aw|
   aw.hostname = 'imap.example.com'
   aw.use_ssl = false
 end
+
+# Or you can do a combination, if you need to:
+IMAPConnection.new(hostname: 'imap.example.com') do |aw|
+  aw.use_ssl = false
+end
 ```
 
-Note that when we set `use_ssl` to `false`, the code respects that, rather than
+Note that when you set `use_ssl` to `false`, the code respects that, rather than
 over-writing anything falsey with the default. If you don't want that, override
 it like with `port`, below.
 
@@ -69,12 +85,14 @@ end
 These various syntaxes enable some trickery when you're dealing with a world of
 uncertainty. Let's look at a more complicated example.
 
-Say we've got a class that lets us describe an Elastic Load Balancer for Amazon
+Say you want a class that lets us describe an Elastic Load Balancer for Amazon
 Web Services. There's a lot of complexity in what each of these arguments might
-be, but the key thing for our example is this: If you have `subnets`, you
+be, but the key thing for this example is this: If you have `subnets`, you
 shouldn't have `availability_zones` and if you have `availability_zones`, you
 shouldn't have `subnets`. And, importantly, you shouldn't send in extraneous
-keys.
+keys; you need to be able to differentiate callers sending `nil` explicitly from
+not sending in anything when you make whatever API calls you're going to make to
+Amazon.
 
 ```ruby
 class AmazonELB
@@ -95,9 +113,9 @@ end
 ```
 
 Now, since there's a lot of complexity in what each of these arguments might be,
-say we've developed some best-practices about what each of them should be. And
-we want to make it easy to pop off slight variations on what we consider to be a
-"standard" ELB.
+say you've developed some best-practices about what each of them should be. And
+you want to make it easy to pop off slight variations on what you consider to be
+a "standard" ELB.
 
 ``` ruby
 module ELBFactory
@@ -141,6 +159,48 @@ creation in an `if`/`else` and repeat all the constructor arguments that were
 shared between the two cases, or else pre-construct your argument hash, which
 would look similar to the above, but require you to assign an intermediate
 variable for no semantic benefit.
+
+
+### Before and After Hooks
+
+In some cases, you might need to take care of some extra things during object
+initialization. One simple case would be if you're inheriting from another class
+and need to call `super` to make sure it initializes correctly. Enter
+`before_assembly` and `after_assembly`.
+
+They both take a block and that block gets evaluated in the scope of your
+instance before or after the rest of Assembler's initializer runs. This means
+instance variables and private methods are available to you and that `self` is
+the object being created. Nothing is `yield`ed to the blocks.
+
+If you don't need to pass arguments or always pass the same arguments, you could
+do something like this:
+
+```ruby
+class Professor < Employee
+  extend Assembler
+
+  before_assembly do
+    super('teaching')
+  end
+end
+```
+
+If, however, you need to react to or interact with options that are passed in,
+you can do something like this:
+
+```ruby
+class Professor < Employee
+  extend Assembler
+
+  attr_reader :title
+
+  assemble_with :department_name, :degree_subject
+  after_assembly do
+    @title = "PhD of #{degree_subject}, #{department_name}"
+  end
+end
+```
 
 
 ## Contributing
