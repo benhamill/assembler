@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+* Add `before_assembly` and `after_assembly` hooks. (Ben Hamill)
+
 ## 1.1.0
 
 * Make Ruby 1.9-compatible. (Ryan Michael)
