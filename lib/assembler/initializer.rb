@@ -4,6 +4,8 @@ require "assembler/parameters"
 module Assembler
   module Initializer
     def initialize(options={})
+      instance_eval(&self.class.before_block) if self.class.before_block
+
       builder = Assembler::Builder.new(*self.class.all_param_names)
 
       yield builder if block_given?
@@ -21,6 +23,8 @@ module Assembler
       end
 
       raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
+
+      instance_eval(&self.class.after_block) if self.class.after_block
     end
 
     private
