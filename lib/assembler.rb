@@ -2,7 +2,6 @@ require "assembler/version"
 require "assembler/initializer"
 
 module Assembler
-  attr_writer :required_params, :optional_params
   attr_reader :before_block, :after_block
 
   def assemble_from_options(*args)
@@ -10,12 +9,8 @@ module Assembler
       options = args.last.is_a?(Hash) ? args.pop : {}
       param_names = args
 
-      if options.has_key?(:default)
-        param_names.each do |param_name|
-          self.optional_params = optional_params.merge(param_name => options[:default])
-        end
-      else
-        self.required_params += param_names
+      param_names.each do |param_name|
+        self.params[param_name] = Parameter.new(param_name, options)
       end
     end
   end
@@ -50,16 +45,20 @@ module Assembler
     end
   end
 
+  def params
+    @params ||= {}
+  end
+
   def required_params
-    @required_params ||= []
+    params.values.reject { |p| p.has_default? }
   end
 
   def optional_params
-    @optional_params ||= {}
+    params.values.select { |p| p.has_default? }
   end
 
   def all_param_names
-    (required_params + optional_params.keys).map(&:to_sym)
+    (required_params + optional_params).map(&:name)
   end
 
   def ensure_setup

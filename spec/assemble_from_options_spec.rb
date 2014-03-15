@@ -134,8 +134,31 @@ describe Assembler do
         end
       end
 
-      it "sends parameter value to constructor argument"
-      it "assigns the output of the coercion"
+      let(:argument) { double('argument') }
+
+      it "sends parameter value to constructor argument (method arguments)" do
+        expect(argument).to receive(:to_set).and_return(Set.new([:coerced]))
+        subject.new(foo: argument)
+      end
+
+      it "assigns the output of the coercion (method arguments)" do
+        allow(argument).to receive(:to_set).and_return(Set.new([:coerced]))
+        built_object = subject.new(foo: argument)
+
+        expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
+      end
+      
+      it "sends parameter value to constructor argument (block)" do
+        expect(argument).to receive(:to_set).and_return(Set.new([:coerced]))
+        subject.new { |b| b.foo = argument }
+      end
+
+      it "assigns the output of the coercion (block)" do
+        allow(argument).to receive(:to_set).and_return(Set.new([:coerced]))
+        built_object = subject.new { |b| b.foo = argument }
+
+        expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
+      end
     end
 
     context "with singular alias parameter" do
@@ -167,14 +190,23 @@ describe Assembler do
         Class.new do
           extend Assembler
 
-          assemble_from :foo
-          assemble_from bar: 'bar'
+          assemble_from_options :foo
+          assemble_from_options :foo, default: :foo, coerce: :to_sym, aliases: [:bar]
         end
       end
 
-      it "re-writes default"
-      it "re-writes aliases"
-      it "re-writes coercions"
+      it "re-writes default" do
+        expect(subject.new.instance_variable_get(:@foo)).to eq(:foo)
+      end
+
+      it "re-writes aliases" do
+        pending 'aliases'
+        expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
+      end
+
+      it "re-writes coercions" do
+        expect(subject.new(foo: 'foo').instance_variable_get(:@foo)).to eq(:foo)
+      end
     end
   end
 end

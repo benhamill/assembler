@@ -1,4 +1,5 @@
 require "assembler/builder"
+require "assembler/parameter"
 require "assembler/parameters"
 
 module Assembler
@@ -14,12 +15,12 @@ module Assembler
 
       missing_required_params = []
 
-      self.class.required_params.each do |param_name|
-        remember_value_or(param_name) { missing_required_params << param_name }
+      self.class.required_params.each do |param|
+        remember_value_or(param.name) { missing_required_params << param.name }
       end
 
-      self.class.optional_params.each do |param_name, default_value|
-        remember_value_or(param_name) { default_value }
+      self.class.optional_params.each do |param|
+        remember_value_or(param.name) { param.default }
       end
 
       raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
@@ -34,8 +35,10 @@ module Assembler
     def remember_value_or(param_name, &block)
       instance_variable_set(
         :"@#{param_name}",
-        full_options.fetch(param_name) do
-          block.call
+        self.class.params[param_name].coerce_value do
+          full_options.fetch(param_name) do
+            block.call
+          end
         end
       )
     end
