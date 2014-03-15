@@ -5,13 +5,29 @@ module Assembler
   attr_writer :required_params, :optional_params
   attr_reader :before_block, :after_block
 
+  def assemble_from_options(*args)
+    ensure_setup do
+      options = args.last.is_a?(Hash) ? args.pop : {}
+      param_names = args
+
+      if options.has_key?(:default)
+        param_names.each do |param_name|
+          self.optional_params = optional_params.merge(param_name => options[:default])
+        end
+      else
+        self.required_params += param_names
+      end
+    end
+  end
+  alias_method :assemble_with_options, :assemble_from_options
+
   def assemble_from(*args)
     ensure_setup do
       optional = args.last.is_a?(Hash) ? args.pop : {}
       required = args
 
-      self.required_params += required
-      self.optional_params = optional_params.merge(optional)
+      optional.each { |k,v| assemble_from_options(k, default: v) }
+      required.each { |k| assemble_from_options(k) }
     end
   end
   alias_method :assemble_with, :assemble_from
