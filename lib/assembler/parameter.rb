@@ -53,13 +53,15 @@ module Assembler
       options[:coerce]
     end
 
-    def coerce_value(value=nil)
-      value = value || yield
-
-      if has_coercion?
-        value.send(coercion)
-      else
+    def coerce_value(value)
+      if !has_coercion?
         value
+      elsif coercion.kind_of?(Symbol)
+        value.send(coercion)
+      elsif coercion.respond_to?(:call)
+        coercion.call(value)
+      else
+        raise ArgumentError, "don't know how to handle coerce value #{coercion}"
       end
     end
 

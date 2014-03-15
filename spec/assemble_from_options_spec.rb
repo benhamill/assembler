@@ -125,7 +125,7 @@ describe Assembler do
       end
     end
 
-    context "with coerce parameter" do
+    context "with symbol coerce parameter" do
       subject do
         Class.new do
           extend Assembler
@@ -158,6 +158,37 @@ describe Assembler do
         built_object = subject.new { |b| b.foo = argument }
 
         expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
+      end
+    end
+
+    context "with callable coerce parameter" do
+      subject do
+        callable = double('callable')
+        allow(callable).to receive(:call) do |s|
+          [s, :called]
+        end
+
+        Class.new do
+          extend Assembler
+
+          assemble_from_options :lambda, default: nil, coerce: ->(s) { [s, :called] }
+          assemble_from_options :proc, default: nil, coerce: Proc.new { |s| [s, :called] }
+          assemble_from_options :callable, default: nil, coerce: callable
+        end
+      end
+
+      let(:argument) { double('argument') }
+
+      it "assigns the output of the coercion (method arguments)" do
+        expect(subject.new(:lambda => :original).instance_variable_get(:@lambda)).to eq([:original, :called])
+        expect(subject.new(:proc => :original).instance_variable_get(:@proc)).to eq([:original, :called])
+        expect(subject.new(:callable => :original).instance_variable_get(:@callable)).to eq([:original, :called])
+      end
+
+      it "assigns the output of the coercion (block)" do
+        expect(subject.new {|b| b.lambda = :original}.instance_variable_get(:@lambda)).to eq([:original, :called])
+        expect(subject.new {|b| b.proc = :original}.instance_variable_get(:@proc)).to eq([:original, :called])
+        expect(subject.new {|b| b.callable = :original}.instance_variable_get(:@callable)).to eq([:original, :called])
       end
     end
 
