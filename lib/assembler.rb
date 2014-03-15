@@ -10,7 +10,8 @@ module Assembler
       param_names = args
 
       param_names.each do |param_name|
-        self.params[param_name] = Parameter.new(param_name, options)
+        param = Parameter.new(param_name, options)
+        self.params_hash[param.name] = param
       end
     end
   end
@@ -45,27 +46,19 @@ module Assembler
     end
   end
 
+  def params_hash
+    @params_hash ||= {}
+  end
+
   def params
-    @params ||= {}
-  end
-
-  def required_params
-    params.values.reject { |p| p.has_default? }
-  end
-
-  def optional_params
-    params.values.select { |p| p.has_default? }
-  end
-
-  def all_param_names
-    (required_params + optional_params).map(&:name)
+    params_hash.values
   end
 
   def ensure_setup
     yield
   ensure
     include Assembler::Initializer
-    attr_reader *all_param_names
-    private *all_param_names
+    attr_reader *params.map(&:name)
+    private *params.map(&:name)
   end
 end

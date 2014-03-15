@@ -170,7 +170,9 @@ describe Assembler do
         end
       end
 
-      it "creates an alias"
+      it "creates an alias" do
+        expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
+      end
     end
 
     context "with enumerable alias parameter" do
@@ -182,7 +184,10 @@ describe Assembler do
         end
       end
 
-      it "creates aliases"
+      it "creates aliases" do
+        expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
+        expect(subject.new(baz: :baz).instance_variable_get(:@foo)).to eq(:baz)
+      end
     end
 
     context "when called more than once for the same key" do
@@ -199,13 +204,20 @@ describe Assembler do
         expect(subject.new.instance_variable_get(:@foo)).to eq(:foo)
       end
 
-      it "re-writes aliases" do
-        pending 'aliases'
+      it "re-writes aliases (method)" do
         expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
       end
 
-      it "re-writes coercions" do
+      it "re-writes aliases (block)" do
+        expect(subject.new { |s| s.bar = :bar}.instance_variable_get(:@foo)).to eq(:bar)
+      end
+
+      it "re-writes coercions (method)" do
         expect(subject.new(foo: 'foo').instance_variable_get(:@foo)).to eq(:foo)
+      end
+
+      it "re-writes coercions (block)" do
+        expect(subject.new { |s| s.foo = 'foo'}.instance_variable_get(:@foo)).to eq(:foo)
       end
     end
   end

@@ -7,6 +7,36 @@ module Assembler
       @options      = options
     end
 
+    def name_and_aliases
+      [name] + aliases.map(&:to_sym)
+    end
+
+    def value_from(options, &if_missing_required)
+      first_key = key_names.find { |name_or_alias| options.has_key?(name_or_alias) }
+
+      if first_key
+        return coerce_value(options[first_key])
+
+      elsif has_default?
+        return coerce_value(default)
+
+      else
+        if_missing_required.call unless if_missing_required.nil?
+
+        return nil
+      end
+    end
+
+    private
+
+    attr_reader :options
+
+    def key_names
+      name_and_aliases.flat_map do |name_or_alias|
+        [name_or_alias.to_sym, name_or_alias.to_s]
+      end
+    end
+
     def has_default?
       options.has_key?(:default)
     end
@@ -15,26 +45,30 @@ module Assembler
       options[:default]
     end
 
+    def has_coercion?
+      options.has_key?(:coerce)
+    end
+
+    def coercion
+      options[:coerce]
+    end
+
     def coerce_value(value=nil)
       value = value || yield
 
       if has_coercion?
-        value.send(coerce)
+        value.send(coercion)
       else
         value
       end
     end
 
-    private
-
-    attr_reader :options
-
-    def has_coercion?
-      options.has_key?(:coerce)
+    def has_aliases?
+      options.has_key?(:aliases)
     end
 
-    def coerce
-      options[:coerce]
+    def aliases
+      has_aliases? ? Array(options[:aliases]) : []
     end
   end
 end
