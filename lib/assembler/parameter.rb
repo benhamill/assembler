@@ -11,7 +11,7 @@ module Assembler
       [name] + aliases.map(&:to_sym)
     end
 
-    def value_from(options, &if_missing_required)
+    def value_from(options, &if_required_and_missing)
       first_key = key_names.find { |name_or_alias| options.has_key?(name_or_alias) }
 
       if first_key
@@ -21,7 +21,7 @@ module Assembler
         return coerce_value(default)
 
       else
-        if_missing_required.call unless if_missing_required.nil?
+        if_required_and_missing.call unless if_required_and_missing.nil?
 
         return nil
       end
@@ -45,16 +45,12 @@ module Assembler
       options[:default]
     end
 
-    def has_coercion?
-      options.has_key?(:coerce)
-    end
-
     def coercion
       options[:coerce]
     end
 
     def coerce_value(value)
-      if !has_coercion?
+      if !coercion
         value
       elsif coercion.kind_of?(Symbol)
         value.send(coercion)
@@ -65,12 +61,8 @@ module Assembler
       end
     end
 
-    def has_aliases?
-      options.has_key?(:aliases)
-    end
-
     def aliases
-      has_aliases? ? Array(options[:aliases]) : []
+      Array(options[:aliases]) + Array(options[:alias])
     end
   end
 end

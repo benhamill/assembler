@@ -75,6 +75,7 @@ describe Assembler do
           extend Assembler
 
           assemble_from_options :foo, :bar, default: 'default'
+          assemble_from_options :baz, :qux, default: nil
         end
       end
 
@@ -83,6 +84,8 @@ describe Assembler do
 
         expect(built_object.instance_variable_get(:@foo)).to eq('default')
         expect(built_object.instance_variable_get(:@bar)).to eq('default')
+        expect(built_object.instance_variable_get(:@baz)).to eq(nil)
+        expect(built_object.instance_variable_get(:@qux)).to eq(nil)
       end
 
       it "uses default values for missing parameters (block)" do
@@ -91,35 +94,43 @@ describe Assembler do
 
         expect(built_object.instance_variable_get(:@foo)).to eq('default')
         expect(built_object.instance_variable_get(:@bar)).to eq('default')
+        expect(built_object.instance_variable_get(:@baz)).to eq(nil)
+        expect(built_object.instance_variable_get(:@qux)).to eq(nil)
       end
 
       it "holds onto the parameters (method arguments)" do
-        built_object = subject.new(foo: 'baz', bar: 'qux')
+        built_object = subject.new(foo: 'foo', bar: 'bar', baz: 'baz', qux: 'qux')
 
-        expect(built_object.instance_variable_get(:@foo)).to eq('baz')
-        expect(built_object.instance_variable_get(:@bar)).to eq('qux')
+        expect(built_object.instance_variable_get(:@foo)).to eq('foo')
+        expect(built_object.instance_variable_get(:@bar)).to eq('bar')
+        expect(built_object.instance_variable_get(:@baz)).to eq('baz')
+        expect(built_object.instance_variable_get(:@qux)).to eq('qux')
       end
 
       it "holds onto the parameters (block)" do
         built_object = subject.new do |builder|
-          builder.foo = 'baz'
-          builder.bar = 'qux'
+          builder.foo = 'foo'
+          builder.bar = 'bar'
+          builder.baz = 'baz'
+          builder.qux = 'qux'
         end
 
-        expect(built_object.instance_variable_get(:@foo)).to eq('baz')
-        expect(built_object.instance_variable_get(:@bar)).to eq('qux')
+        expect(built_object.instance_variable_get(:@foo)).to eq('foo')
+        expect(built_object.instance_variable_get(:@bar)).to eq('bar')
+        expect(built_object.instance_variable_get(:@baz)).to eq('baz')
+        expect(built_object.instance_variable_get(:@qux)).to eq('qux')
       end
 
       it "ignores un-named parameters in method arguments" do
-        built_object = subject.new(baz: 'baz')
+        built_object = subject.new(nope: 'nope')
 
-        expect(built_object.instance_variables).to_not include(:@baz)
+        expect(built_object.instance_variables).to_not include(:@nope)
       end
 
       it "doesn't create builder methods for un-named parameters" do
         expect {
           subject.new do |builder|
-            builder.baz = 'baz'
+            builder.nope = 'nope'
           end
         }.to raise_error(NoMethodError)
       end
@@ -134,7 +145,7 @@ describe Assembler do
         end
       end
 
-      let(:argument) { double('argument') }
+      let(:argument) { double('argument', to_set: Set.new([:coerced])) }
 
       it "sends parameter value to constructor argument (method arguments)" do
         expect(argument).to receive(:to_set).and_return(Set.new([:coerced]))
@@ -142,7 +153,6 @@ describe Assembler do
       end
 
       it "assigns the output of the coercion (method arguments)" do
-        allow(argument).to receive(:to_set).and_return(Set.new([:coerced]))
         built_object = subject.new(foo: argument)
 
         expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
@@ -154,7 +164,6 @@ describe Assembler do
       end
 
       it "assigns the output of the coercion (block)" do
-        allow(argument).to receive(:to_set).and_return(Set.new([:coerced]))
         built_object = subject.new { |b| b.foo = argument }
 
         expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
@@ -193,6 +202,35 @@ describe Assembler do
     end
 
     context "with singular alias parameter" do
+      subject do
+        Class.new do
+          extend Assembler
+
+          assemble_from_options :foo, :alias => :bar
+        end
+      end
+
+      it "creates an alias" do
+        expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
+      end
+    end
+
+    context "with enumerable alias parameter" do
+      subject do
+        Class.new do
+          extend Assembler
+
+          assemble_from_options :foo, :alias => [:bar, :baz]
+        end
+      end
+
+      it "creates aliases" do
+        expect(subject.new(bar: :bar).instance_variable_get(:@foo)).to eq(:bar)
+        expect(subject.new(baz: :baz).instance_variable_get(:@foo)).to eq(:baz)
+      end
+    end
+
+    context "with singular aliases parameter" do
       subject do
         Class.new do
           extend Assembler

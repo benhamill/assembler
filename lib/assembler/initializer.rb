@@ -4,27 +4,27 @@ require "assembler/parameter"
 module Assembler
   module Initializer
     def initialize(options={})
-      instance_eval(&self.class.before_block) if self.class.before_block
+      instance_eval(&self.class.before_assembly_block) if self.class.before_assembly_block
 
-      builder = Assembler::Builder.new(*self.class.params.flat_map(&:name_and_aliases))
+      builder = Assembler::Builder.new(*self.class.assembly_parameters.flat_map(&:name_and_aliases))
 
       yield builder if block_given?
 
       full_options = options.merge(builder.to_h)
 
-      missing_required_params = []
+      missing_required_parameters = []
 
-      self.class.params.each do |param|
-        if_missing_required = -> { missing_required_params << param.name }
+      self.class.assembly_parameters.each do |param|
+        if_required_and_missing = -> { missing_required_parameters << param.name }
 
-        value = param.value_from(full_options, &if_missing_required) 
+        value = param.value_from(full_options, &if_required_and_missing) 
 
         instance_variable_set(:"@#{param.name}", value)
       end
 
-      raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
+      raise(ArgumentError, "missing keywords: #{missing_required_parameters.join(', ')}") if missing_required_parameters.any?
 
-      instance_eval(&self.class.after_block) if self.class.after_block
+      instance_eval(&self.class.after_assembly_block) if self.class.after_assembly_block
     end
   end
 end
