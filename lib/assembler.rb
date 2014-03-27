@@ -11,7 +11,7 @@ module Assembler
 
       param_names.each do |param_name|
         param = Parameter.new(param_name, options)
-        self.assembly_parameters_hash[param.name] = param
+        assembly_parameters_hash[param.name] = param
       end
     end
   end
@@ -46,12 +46,14 @@ module Assembler
     end
   end
 
-  def assembly_parameters_hash
-    @assembly_parameters_hash ||= {}
-  end
-
   def assembly_parameters
     assembly_parameters_hash.values
+  end
+
+  private
+
+  def assembly_parameters_hash
+    @assembly_parameters_hash ||= {}
   end
 
   def assembly_setup

@@ -8,22 +8,25 @@ module Assembler
     end
 
     def name_and_aliases
-      [name] + aliases.map(&:to_sym)
+      @name_and_aliases ||= [name] + aliases.map(&:to_sym)
     end
 
     def value_from(options, &if_required_and_missing)
+      @memoized_value_from ||= {}
+      return @memoized_value_from[options] if @memoized_value_from.has_key?(options)
+
       first_key = key_names.find { |name_or_alias| options.has_key?(name_or_alias) }
 
       if first_key
-        return coerce_value(options[first_key])
+        return @memoized_value_from[options] = coerce_value(options[first_key])
 
       elsif has_default?
-        return coerce_value(default)
+        return @memoized_value_from[options] = coerce_value(default)
 
       else
         if_required_and_missing.call unless if_required_and_missing.nil?
 
-        return nil
+        return @memoized_value_from[options] = nil
       end
     end
 
