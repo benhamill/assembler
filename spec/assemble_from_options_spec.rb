@@ -19,6 +19,7 @@ describe Assembler do
 
       it "doesn't have methods on the builder object" do
         subject.new do |builder|
+          expect(builder).to_not respond_to(:foo=)
           expect(builder).to_not respond_to(:foo)
         end
       end
@@ -66,6 +67,30 @@ describe Assembler do
             builder.baz = 'baz'
           end
         }.to raise_error(NoMethodError)
+      end
+
+      it "provides accessors in the builder object" do
+        subject.new do |builder|
+          builder.foo = :new_foo
+          builder.bar = :new_bar
+
+          expect(builder.foo).to eq(:new_foo)
+        end
+      end
+
+      it "returns nil for un-assigned parameters" do
+        subject.new do |builder|
+          expect(builder.foo).to be_nil
+
+          builder.foo = :new_foo
+          builder.bar = :new_bar
+        end
+      end
+
+      it "incorporates constructor args in the builder accessors" do
+        subject.new(foo: 'new_foo', bar: 'new_bar') do |builder|
+          expect(builder.foo).to eq('new_foo')
+        end
       end
     end
 
@@ -134,6 +159,25 @@ describe Assembler do
           end
         }.to raise_error(NoMethodError)
       end
+
+      it "provides accessors in the builder object" do
+        subject.new do |builder|
+          builder.foo = :new_foo
+          expect(builder.foo).to eq(:new_foo)
+        end
+      end
+
+      it "pre-fills default values in the builder accessors" do
+        subject.new do |builder|
+          expect(builder.foo).to eq('default')
+        end
+      end
+
+      it "incorporates constructor args in the builder accessors" do
+        subject.new(foo: 'new_foo') do |builder|
+          expect(builder.foo).to eq('new_foo')
+        end
+      end
     end
 
     context "with symbol coerce parameter" do
@@ -142,6 +186,7 @@ describe Assembler do
           extend Assembler
 
           assemble_from_options :foo, coerce: :to_set
+          assemble_from_options :bar, coerce: :to_set, default: [:coerced]
         end
       end
 
@@ -167,6 +212,25 @@ describe Assembler do
         built_object = subject.new { |b| b.foo = argument }
 
         expect(built_object.instance_variable_get(:@foo)).to eq(Set.new([:coerced]))
+      end
+
+      it "coerces default values in the builder accessor" do
+        subject.new(foo: [:foo]) do |builder|
+          expect(builder.bar).to eq(Set.new([:coerced]))
+        end
+      end
+
+      it "coerces constructor args in the builder accessors" do
+        subject.new(foo: [:not_default]) do |builder|
+          expect(builder.foo).to eq(Set.new([:not_default]))
+        end
+      end
+
+      it "coerces assigned values in the buidler accessors" do
+        subject.new do |builder|
+          builder.foo = [:not_default]
+          expect(builder.foo).to eq(Set.new([:not_default]))
+        end
       end
     end
 
@@ -198,6 +262,34 @@ describe Assembler do
         expect(subject.new {|b| b.lambda = :original}.instance_variable_get(:@lambda)).to eq([:original, :called])
         expect(subject.new {|b| b.proc = :original}.instance_variable_get(:@proc)).to eq([:original, :called])
         expect(subject.new {|b| b.callable = :original}.instance_variable_get(:@callable)).to eq([:original, :called])
+      end
+
+      it "coerces default values in the builder accessor" do
+        subject.new do |builder|
+          expect(builder.lambda).to eq([nil, :called])
+          expect(builder.proc).to eq([nil, :called])
+          expect(builder.callable).to eq([nil, :called])
+        end
+      end
+
+      it "coerces constructor args in the builder accessors" do
+        subject.new(:lambda => :original, :proc => :original, :callable => :original) do |builder|
+          expect(builder.lambda).to eq([:original, :called])
+          expect(builder.proc).to eq([:original, :called])
+          expect(builder.callable).to eq([:original, :called])
+        end
+      end
+
+      it "coerces assigned values in the buidler accessors" do
+        subject.new do |builder|
+          builder.lambda = :original
+          builder.proc = :original
+          builder.callable = :original
+
+          expect(builder.lambda).to eq([:original, :called])
+          expect(builder.proc).to eq([:original, :called])
+          expect(builder.callable).to eq([:original, :called])
+        end
       end
     end
 

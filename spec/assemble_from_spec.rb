@@ -90,13 +90,13 @@ describe Assembler do
       end
 
       it "pre-fills default values in the builder accessors" do
-        subject.new do |builder|
+        subject.new(foo: 'foo') do |builder|
           expect(builder.bar).to eq('bar')
         end
       end
 
       it "incorporates contructor args in the builder accessors" do
-        subject.new(bar: 'new_bar') do |builder|
+        subject.new(foo: 'foo', bar: 'new_bar') do |builder|
           expect(builder.bar).to eq('new_bar')
         end
       end
