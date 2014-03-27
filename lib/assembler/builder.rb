@@ -8,6 +8,10 @@ module Assembler
           def #{parameter_name}=(value)
             parameters[:#{parameter_name.to_sym}] = value
           end
+
+          def #{parameter_name}
+            parameters[:#{parameter_name.to_sym}]
+          end
         RUBY
       end
     end

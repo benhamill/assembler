@@ -81,6 +81,25 @@ describe Assembler do
           end
         }.to raise_error(NoMethodError)
       end
+
+      it "provides accessors in the builder object" do
+        subject.new do |builder|
+          builder.foo = :new_foo
+          expect(builder.foo).to eq(:new_foo)
+        end
+      end
+
+      it "pre-fills default values in the builder accessors" do
+        subject.new do |builder|
+          expect(builder.bar).to eq('bar')
+        end
+      end
+
+      it "incorporates contructor args in the builder accessors" do
+        subject.new(bar: 'new_bar') do |builder|
+          expect(builder.bar).to eq('new_bar')
+        end
+      end
     end
 
     context "when called more than once" do
