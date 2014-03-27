@@ -61,5 +61,33 @@ describe Assembler do
         expect { klass.new }.to_not raise_error
       end
     end
+
+    context "with two after hooks defined" do
+      let(:klass) do
+        Class.new do
+          extend Assembler
+
+          after_assembly do
+            hooks << :first
+          end
+
+          after_assembly do
+            hooks << :second
+          end
+
+          def hooks
+            @hooks ||= []
+          end
+        end
+      end
+
+      subject do
+        klass.new
+      end
+
+      it "calls the after hooks in order of declaration" do
+        expect(subject.hooks).to eq([:first, :second])
+      end
+    end
   end
 end
