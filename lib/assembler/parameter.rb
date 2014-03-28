@@ -13,9 +13,9 @@ module Assembler
 
     def value_from(options, &if_required_and_missing)
       @memoized_value_from ||= {}
-      memoization_key = [options, if_required_and_missing]
+      memoization_key = options.hash
 
-      return @memoized_value_from[memoization_key] if @memoized_value_from.has_key?(memoization_key)
+      return @memoized_value_from[memoization_key] if @memoized_value_from[memoization_key]
 
       first_key = key_names.find { |name_or_alias| options.has_key?(name_or_alias) }
 
