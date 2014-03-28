@@ -13,7 +13,14 @@ module Assembler
 
     def value_from(options, &if_required_and_missing)
       @memoized_value_from ||= {}
-      memoization_key = options.hash
+
+      # NOTE: Jruby's Hash#hash implementation is BS:
+      # {:foo => :foo}.hash => 1
+      # {:bar => :bar}.hash => 1
+      # {:foo => :foo}.to_a.hash => 806614226
+      # {:bar => :bar}.to_a.hash => 3120054328
+      # Go figure...
+      memoization_key = options.to_a.hash
 
       return @memoized_value_from[memoization_key] if @memoized_value_from[memoization_key]
 
