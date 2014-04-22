@@ -11,7 +11,7 @@ module Assembler
       @name_and_aliases ||= [name] + aliases.map(&:to_sym)
     end
 
-    def value_from(options, &if_required_and_missing)
+    def value_from(hash, &if_required_and_missing)
       @memoized_value_from ||= {}
 
       # NOTE: Jruby's Hash#hash implementation is BS:
@@ -20,23 +20,21 @@ module Assembler
       # {:foo => :foo}.to_a.hash => 806614226
       # {:bar => :bar}.to_a.hash => 3120054328
       # Go figure...
-      memoization_key = options.to_a.hash
+      memoization_key = hash.to_a.hash
 
       return @memoized_value_from[memoization_key] if @memoized_value_from[memoization_key]
 
-      first_key = key_names.find { |name_or_alias| options.has_key?(name_or_alias) }
+      first_key = key_names.find { |name_or_alias| hash.has_key?(name_or_alias) }
 
-      if first_key
-        return @memoized_value_from[memoization_key] = coerce_value(options[first_key])
+      raw_value = hash.fetch(first_key) do
+        options.fetch(:default) do
+          if_required_and_missing.call unless if_required_and_missing.nil?
 
-      elsif has_default?
-        return @memoized_value_from[memoization_key] = coerce_value(default)
-
-      else
-        if_required_and_missing.call unless if_required_and_missing.nil?
-
-        return @memoized_value_from[memoization_key] = nil
+          return nil
+        end
       end
+
+      return @memoized_value_from[memoization_key] = coerce_value(raw_value)
     end
 
     private
@@ -74,7 +72,7 @@ module Assembler
     end
 
     def aliases
-      Array(options[:aliases]) + Array(options[:alias])
+      @aliases ||= Array(options[:aliases]) + Array(options[:alias])
     end
   end
 end

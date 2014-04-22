@@ -244,7 +244,7 @@ describe Assembler do
       end
     end
 
-    context "with enumerable alias parameter" do
+    context "with enumerable aliases parameter" do
       subject do
         Class.new do
           extend Assembler
