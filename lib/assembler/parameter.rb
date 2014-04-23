@@ -26,13 +26,16 @@ module Assembler
 
       first_key = key_names.find { |name_or_alias| hash.has_key?(name_or_alias) }
 
-      @memoized_value_from[memoization_key] = coerce_value hash.fetch(first_key) do
+      raw_value = hash.fetch(first_key) do
         options.fetch(:default) do
           if_required_and_missing.call unless if_required_and_missing.nil?
 
-          return nil
+          # Returning here so we don't call coerce_value(nil)
+          return
         end
       end
+
+      @memoized_value_from[memoization_key] = coerce_value(raw_value)
     end
 
     private
