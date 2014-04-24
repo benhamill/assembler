@@ -1,43 +1,30 @@
 require "assembler/builder"
-require "assembler/parameters"
+require "assembler/parameter"
 
 module Assembler
   module Initializer
     def initialize(options={})
-      instance_eval(&self.class.before_block) if self.class.before_block
+      instance_eval(&self.class.before_assembly_block) if self.class.before_assembly_block
 
-      builder = Assembler::Builder.new(*self.class.all_param_names)
+      builder = Assembler::Builder.new(*self.class.assembly_parameters.flat_map(&:name_and_aliases))
 
       yield builder if block_given?
 
-      @full_options = Assembler::Parameters.new(options.merge(builder.to_h))
+      full_options = options.merge(builder.to_h)
 
-      missing_required_params = []
+      missing_required_parameters = []
 
-      self.class.required_params.each do |param_name|
-        remember_value_or(param_name) { missing_required_params << param_name }
+      self.class.assembly_parameters.each do |param|
+        if_required_and_missing = -> { missing_required_parameters << param.name }
+
+        value = param.value_from(full_options, &if_required_and_missing) 
+
+        instance_variable_set(:"@#{param.name}", value)
       end
 
-      self.class.optional_params.each do |param_name, default_value|
-        remember_value_or(param_name) { default_value }
-      end
+      raise(ArgumentError, "missing keywords: #{missing_required_parameters.join(', ')}") if missing_required_parameters.any?
 
-      raise(ArgumentError, "missing keywords: #{missing_required_params.join(', ')}") if missing_required_params.any?
-
-      instance_eval(&self.class.after_block) if self.class.after_block
-    end
-
-    private
-
-    attr_reader :full_options
-
-    def remember_value_or(param_name, &block)
-      instance_variable_set(
-        :"@#{param_name}",
-        full_options.fetch(param_name) do
-          block.call
-        end
-      )
+      instance_eval(&self.class.after_assembly_block) if self.class.after_assembly_block
     end
   end
 end
