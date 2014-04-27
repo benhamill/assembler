@@ -24,9 +24,9 @@ It takes care of storing the parameters and gives you private accessors, too.
 
 ### `assemble_from`
 
-This is the core of Assembler. The basic use case it to pass in required
-parameters followed by optional parameters (and their defaults). Take this
-simple example:
+The `assemble_from` method is the core of Assembler. It's also aliased as
+`assemble_with`. The basic use case is to pass in required parameters followed
+by optional parameters (and their defaults). Take this simple example:
 
 ```ruby
 class IMAPConnection
@@ -127,7 +127,7 @@ module ELBFactory
       elb.security_groups = security_groups
       elb.instance_ids = instance_ids
 
-      elb.health_check =  HealthCheck.new (
+      elb.health_check = HealthCheck.new(
         target: 'HTTP:8000/',
         healthy_threshold: '3',
         unhealthy_threshold: '5',
@@ -165,42 +165,45 @@ variable for no semantic benefit.
 ### `assemble_from_options`
 
 If you need to do something more complicated than what's provided by
-`assemble_from`, you can specify per-argument options using `assemble_from_options`.
+`assemble_from`, you can specify per-argument options using
+`assemble_from_options`. Like `assemble_from`, it's also aliased as
+`assemble_with_options`.
 
-Default values can be specified using the `:default` option, and work the same 
+Default values can be specified using the `:default` option, and work the same
 as using hash-syntax with `assemble_from`.
 
 If you would like to do some type of value coercion you can specify either a
-symbol or a callable using the `:coerce` option.  Symbols will be called on the
-input, and callables (anything that responds to `#call`) will be called with the input.
+symbol or a callable using the `:coerce` option. Symbols will be passed as
+messages to the input object, and anything that responds to `#call` will be
+called with the input object as an argument.
 
 If you need to accept aliased key names you can use the `:aliases` option to
-specify a list of keys.  Aliases only apply to input processing - instance
-variables aren't set and accessors aren't be provided.  
+specify a list of keys. Aliases only apply to input processing; instance
+variables aren't set and accessors aren't be provided.
 
 ```ruby
 class IMAPConnection
   extend Assembler
 
-  # Here we want to assign an IP address so we only do DNS lookup once
+  # Here we want to assign an IP address so we only do DNS lookup once.
   assemble_from_options :hostname, coerce: ->(h) { Resolv.getaddress(h) }
-  
-  # Defaults must be specified explicitly - arguments with no default are required
+
+  # Defaults must be specified explicitly; arguments with no default are required.
   assemble_from_options :use_ssl, default: false
 
-  # We'll accept values named 'port' or 'host_port' (but we'll only assign '@port')
-  # Symbols can also be passed as coercions.  
+  # We'll accept values named 'port' or 'host_port' (but we'll only assign '@port').
+  # Symbols can also be passed for coercions.
   assemble_from_options :port, default: nil, coerce: :to_i, aliases: [:host_port]
 end
 
 instance = IMAPConnection.new(hostname: 'localhost') do |b|
-  puts b.hostname   # => '127.0.0.0' - ie the accessor returns the coerced value
-  puts b.use_ssl    # => false - ie, the accessor returns default values if none specified
-  b.port = '100'    # Will be coerced to the integer 100
+  puts b.hostname   # => '127.0.0.0' - i.e. the accessor returns the coerced value.
+  puts b.use_ssl    # => false - i.e. the accessor returns the default value if none is specified.
+  b.port = '100'    # Will be coerced to the integer 100.
 end
 
-instance.host_port  # => MethodMissing error - accessors aren't defined for aliases
-``` 
+instance.host_port  # => MethodMissing error - accessors aren't defined for aliases.
+```
 
 ### Before and After Hooks
 
@@ -239,6 +242,34 @@ class Professor < Employee
   assemble_with :department_name, :degree_subject
   after_assembly do
     @title = "PhD of #{degree_subject}, #{department_name}"
+  end
+end
+```
+
+If you call these methods more than once, each block will be run in the order
+declared. The most common case would be a child class adding more before or
+after functionality to that declared by a parent.
+
+```ruby
+class Employee
+  extend Assembler
+
+  assemble_with :manager_id, department_name: nil
+
+  attr_reader :manager
+
+  after_assembly do
+    @manager = Manager.find(manager_id)
+  end
+end
+
+class Professor < Employee
+  assemble_with :department_chair
+
+  attr_reader :people_answerable_to
+
+  after_assembly do
+    @people_answerable_to = [manager, department_name]
   end
 end
 ```

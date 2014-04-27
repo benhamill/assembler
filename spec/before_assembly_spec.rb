@@ -50,5 +50,33 @@ describe Assembler do
         expect(subject.middle).to eq('middle')
       end
     end
+
+    context "with two before hooks defined" do
+      let(:klass) do
+        Class.new do
+          extend Assembler
+
+          before_assembly do
+            hooks << :first
+          end
+
+          before_assembly do
+            hooks << :second
+          end
+
+          def hooks
+            @hooks ||= []
+          end
+        end
+      end
+
+      subject do
+        klass.new
+      end
+
+      it "calls the before hooks in order of declaration" do
+        expect(subject.hooks).to eq([:first, :second])
+      end
+    end
   end
 end

@@ -2,8 +2,6 @@ require "assembler/version"
 require "assembler/initializer"
 
 module Assembler
-  attr_reader :before_assembly_block, :after_assembly_block
-
   def assemble_from_options(*args)
     assembly_setup do
       options = args.last.is_a?(Hash) ? args.pop : {}
@@ -36,14 +34,22 @@ module Assembler
 
   def before_assembly(&block)
     assembly_setup do
-      @before_assembly_block = block
+      before_assembly_blocks << block
     end
+  end
+
+  def before_assembly_blocks
+    @before_assembly_blocks ||= []
   end
 
   def after_assembly(&block)
     assembly_setup do
-      @after_assembly_block = block
+      after_assembly_blocks << block
     end
+  end
+
+  def after_assembly_blocks
+    @after_assembly_blocks ||= []
   end
 
   def assembly_parameters

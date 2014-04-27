@@ -4,7 +4,11 @@ require "assembler/parameter"
 module Assembler
   module Initializer
     def initialize(options={})
-      instance_eval(&self.class.before_assembly_block) if self.class.before_assembly_block
+      if self.class.before_assembly_blocks.any?
+        self.class.before_assembly_blocks.each do |block|
+          instance_eval(&block)
+        end
+      end
 
       builder = Assembler::Builder.new(self.class.assembly_parameters_hash, options)
 
@@ -22,7 +26,11 @@ module Assembler
 
       raise(ArgumentError, "missing keywords: #{missing_required_parameters.join(', ')}") if missing_required_parameters.any?
 
-      instance_eval(&self.class.after_assembly_block) if self.class.after_assembly_block
+      if self.class.after_assembly_blocks.any?
+        self.class.after_assembly_blocks.each do |block|
+          instance_eval(&block)
+        end
+      end
     end
   end
 end

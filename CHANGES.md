@@ -4,8 +4,10 @@
 
 * Add ability to access (optionally) coerced values on the builder object, for
   example Foo.new(some: 'value') {|b| puts b.some}. (Ryan Michael)
-* Add `assemble_from_options` DSL method for defining coercions and aliases (Ryan Michael)
+* Add `assemble_from_options` DSL method for defining coercions and aliases. (Ryan Michael)
 * Add `before_assembly` and `after_assembly` hooks. (Ben Hamill)
+* Make the `before_assembly` and `after_assembly` hooks additive, in the case
+  that those methods are called more than once. (Ben Hamill)
 
 ## 1.1.0
 
