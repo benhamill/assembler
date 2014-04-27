@@ -246,6 +246,34 @@ class Professor < Employee
 end
 ```
 
+If you call these methods more than once, each block will be run in the order
+declared. The most common case would be a child class adding more before or
+after functionality to that declared by a parent.
+
+```ruby
+class Employee
+  extend Assembler
+
+  assemble_with :manager_id, department_name: nil
+
+  attr_reader :manager
+
+  after_assembly do
+    @manager = Manager.find(manager_id)
+  end
+end
+
+class Professor < Employee
+  assemble_with :department_chair
+
+  attr_reader :people_answerable_to
+
+  after_assembly do
+    @people_answerable_to = [manager, department_name]
+  end
+end
+```
+
 
 ## Contributing
 
