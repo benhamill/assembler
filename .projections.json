@@ -1,6 +1,0 @@
-{
-  "lib/assembler/*.rb": { "command": "lib" },
-  "lib/assembler.rb": { "command": "lib" },
-  "spec/*": { "command": "spec" },
-  "spec/spec_helper.rb": { "command": "spec" }
-}
