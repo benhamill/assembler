@@ -50,8 +50,6 @@ module Assembler
     assembly_parameters_hash.values
   end
 
-  private
-
   def assembly_parameters_hash
     @assembly_parameters_hash ||= {}
   end

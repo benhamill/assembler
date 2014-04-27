@@ -6,18 +6,16 @@ module Assembler
     def initialize(options={})
       instance_eval(&self.class.before_assembly_block) if self.class.before_assembly_block
 
-      builder = Assembler::Builder.new(*self.class.assembly_parameters.flat_map(&:name_and_aliases))
+      builder = Assembler::Builder.new(self.class.assembly_parameters_hash, options)
 
       yield builder if block_given?
-
-      full_options = options.merge(builder.to_h)
 
       missing_required_parameters = []
 
       self.class.assembly_parameters.each do |param|
         if_required_and_missing = -> { missing_required_parameters << param.name }
 
-        value = param.value_from(full_options, &if_required_and_missing) 
+        value = param.value_from(builder.to_h, &if_required_and_missing) 
 
         instance_variable_set(:"@#{param.name}", value)
       end

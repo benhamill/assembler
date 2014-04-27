@@ -15,6 +15,7 @@ It takes care of storing the parameters and gives you private accessors, too.
 
 * [Usage](#usage)
   * [assemble_from](#assemble_from)
+  * [assemble_from_options](#assemble_from_options)
   * [Before and After Hooks](#before-and-after-hooks)
 * [Contributing](#contributing)
 
@@ -160,6 +161,46 @@ shared between the two cases, or else pre-construct your argument hash, which
 would look similar to the above, but require you to assign an intermediate
 variable for no semantic benefit.
 
+
+### `assemble_from_options`
+
+If you need to do something more complicated than what's provided by
+`assemble_from`, you can specify per-argument options using `assemble_from_options`.
+
+Default values can be specified using the `:default` option, and work the same 
+as using hash-syntax with `assemble_from`.
+
+If you would like to do some type of value coercion you can specify either a
+symbol or a callable using the `:coerce` option.  Symbols will be called on the
+input, and callables (anything that responds to `#call`) will be called with the input.
+
+If you need to accept aliased key names you can use the `:aliases` option to
+specify a list of keys.  Aliases only apply to input processing - instance
+variables aren't set and accessors aren't be provided.  
+
+```ruby
+class IMAPConnection
+  extend Assembler
+
+  # Here we want to assign an IP address so we only do DNS lookup once
+  assemble_from_options :hostname, coerce: ->(h) { Resolv.getaddress(h) }
+  
+  # Defaults must be specified explicitly - arguments with no default are required
+  assemble_from_options :use_ssl, default: false
+
+  # We'll accept values named 'port' or 'host_port' (but we'll only assign '@port')
+  # Symbols can also be passed as coercions.  
+  assemble_from_options :port, default: nil, coerce: :to_i, aliases: [:host_port]
+end
+
+instance = IMAPConnection.new(hostname: 'localhost') do |b|
+  puts b.hostname   # => '127.0.0.0' - ie the accessor returns the coerced value
+  puts b.use_ssl    # => false - ie, the accessor returns default values if none specified
+  b.port = '100'    # Will be coerced to the integer 100
+end
+
+instance.host_port  # => MethodMissing error - accessors aren't defined for aliases
+``` 
 
 ### Before and After Hooks
 
