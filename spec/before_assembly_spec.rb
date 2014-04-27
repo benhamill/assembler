@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Assembler do
   describe "#before_assembly" do
     context "with no other assembler helpers called" do

@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Assembler do
   describe "#assemble_from_options" do
     context "without parameters" do
