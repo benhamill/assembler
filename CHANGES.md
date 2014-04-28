@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## 1.2.0
 
 * Add ability to access (optionally) coerced values on the builder object, for
   example Foo.new(some: 'value') {|b| puts b.some}. (Ryan Michael)
