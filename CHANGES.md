@@ -8,6 +8,8 @@
 * Add `before_assembly` and `after_assembly` hooks. (Ben Hamill)
 * Make the `before_assembly` and `after_assembly` hooks additive, in the case
   that those methods are called more than once. (Ben Hamill)
+* Change up spec set up and move project documentation around a little. (Ben
+  Hamill)
 
 ## 1.1.0
 
