@@ -3,26 +3,39 @@ require "assembler/initializer"
 
 module Assembler
   def assemble_from_options(*args)
-    assembly_setup do
-      options = args.last.is_a?(Hash) ? args.pop : {}
-      param_names = args
+    include Assembler::Initializer
 
-      param_names.each do |param_name|
-        param = Parameter.new(param_name, options)
-        assembly_parameters_hash[param.name] = param
+    options = args.last.is_a?(Hash) ? args.pop : {}
+    param_names = args
+
+    param_names.each do |param_name|
+      param = Parameter.new(param_name, options)
+      assembly_parameters_hash[param.name] = param
+
+      param.name_and_aliases.each do |name_or_alias|
+        define_method("#{name_or_alias}=") do |value|
+          coerced_value = param.coerce_value(value)
+          instance_variable_set(param.ivar_name, coerced_value)
+        end
+        private "#{name_or_alias}=".to_sym
+
+        define_method(name_or_alias) do
+          instance_variable_get(param.ivar_name)
+        end
+        private name_or_alias.to_sym
       end
     end
   end
   alias_method :assemble_with_options, :assemble_from_options
 
   def assemble_from(*args)
-    assembly_setup do
-      optional = args.last.is_a?(Hash) ? args.pop : {}
-      required = args
+    include Assembler::Initializer
 
-      optional.each { |k,v| assemble_from_options(k, default: v) }
-      required.each { |k| assemble_from_options(k) }
-    end
+    optional = args.last.is_a?(Hash) ? args.pop : {}
+    required = args
+
+    optional.each { |k,v| assemble_from_options(k, default: v) }
+    required.each { |k| assemble_from_options(k) }
   end
   alias_method :assemble_with, :assemble_from
 
@@ -33,9 +46,9 @@ module Assembler
   end
 
   def before_assembly(&block)
-    assembly_setup do
-      before_assembly_blocks << block
-    end
+    include Assembler::Initializer
+
+    before_assembly_blocks << block
   end
 
   def before_assembly_blocks
@@ -43,9 +56,9 @@ module Assembler
   end
 
   def after_assembly(&block)
-    assembly_setup do
-      after_assembly_blocks << block
-    end
+    include Assembler::Initializer
+    
+    after_assembly_blocks << block
   end
 
   def after_assembly_blocks
@@ -58,13 +71,5 @@ module Assembler
 
   def assembly_parameters_hash
     @assembly_parameters_hash ||= {}
-  end
-
-  def assembly_setup
-    yield
-  ensure
-    include Assembler::Initializer
-    attr_reader *assembly_parameters.map(&:name)
-    private *assembly_parameters.map(&:name)
   end
 end
