@@ -20,6 +20,15 @@ describe Assembler do
           expect(builder).to_not respond_to(:foo)
         end
       end
+
+      it "exposes the assembled object on the builder" do
+        assembled_object = nil
+        object = subject.new do |builder|
+          assembled_object = builder.assembled_object
+        end
+
+        expect(object).to equal(assembled_object)
+      end
     end
 
     context "with a mix of required and optional parameters" do
@@ -96,6 +105,34 @@ describe Assembler do
       it "incorporates contructor args in the builder accessors" do
         subject.new(foo: 'foo', bar: 'new_bar') do |builder|
           expect(builder.bar).to eq('new_bar')
+        end
+      end
+
+      it "reflects defaults on builder#assembled_object" do
+        subject.new(foo: 'foo') do |builder|
+          expect(builder.assembled_object.instance_variable_get(:@bar)).to eq('bar')
+        end
+      end
+
+      it "reflects options passed to constructor on builder#assembled_object" do
+        subject.new(foo: 'foo') do |builder|
+          expect(builder.assembled_object.instance_variable_get(:@foo)).to eq('foo')
+        end
+      end
+
+      it "reflects values assigned to builder on builder#assembled_object" do
+        subject.new(foo: 'foo', bar: 'new_bar') do |builder|
+          builder.foo = 'new_foo'
+
+          expect(builder.assembled_object.instance_variable_get(:@foo)).to eq('new_foo')
+        end
+      end
+
+      it "reflects values assigned to builder#assembled_object on builder" do
+        subject.new(foo: 'foo', bar: 'new_bar') do |builder|
+          builder.assembled_object.instance_variable_set(:@foo, 'new_foo')
+
+          expect(builder.foo).to eq('new_foo')
         end
       end
     end
