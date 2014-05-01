@@ -4,32 +4,33 @@ require "assembler/parameter"
 module Assembler
   module Initializer
     def initialize(options={})
-      if self.class.before_assembly_blocks.any?
-        self.class.before_assembly_blocks.each do |block|
-          instance_eval(&block)
-        end
+      self.class.before_assembly_blocks.each do |block|
+        instance_eval(&block)
       end
 
-      builder = Assembler::Builder.new(self.class.assembly_parameters_hash, options)
+      builder = Assembler::Builder.new(self, self.class.assembly_parameters_hash)
+      methods = self.class.assembly_parameters.flat_map(&:name_and_aliases)
+
+      self.class.assembly_parameters.select(&:has_default?).each do |param|
+        builder.send("#{param.name}=", param.default)
+      end
+
+      options.each do |param_name, value|
+        builder.send("#{param_name.to_sym}=", value) if methods.include?(param_name.to_sym)
+      end
 
       yield builder if block_given?
 
-      missing_required_parameters = []
-
-      self.class.assembly_parameters.each do |param|
-        if_required_and_missing = -> { missing_required_parameters << param.name }
-
-        value = param.value_from(builder.to_h, &if_required_and_missing) 
-
-        instance_variable_set(:"@#{param.name}", value)
+      self.class.after_assembly_blocks.each do |block|
+        instance_eval(&block)
       end
 
-      raise(ArgumentError, "missing keywords: #{missing_required_parameters.join(', ')}") if missing_required_parameters.any?
+      missing_required_parameters = self.class.assembly_parameters.
+        reject { |param| param.has_default? }.
+        reject { |param| instance_variable_defined?(:"@#{param.name}") }
 
-      if self.class.after_assembly_blocks.any?
-        self.class.after_assembly_blocks.each do |block|
-          instance_eval(&block)
-        end
+      if missing_required_parameters.any?
+        raise(ArgumentError, "missing keywords: #{missing_required_parameters.map(&:name).join(', ')}") 
       end
     end
   end

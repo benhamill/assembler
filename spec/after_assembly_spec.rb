@@ -87,5 +87,23 @@ describe Assembler do
         expect(subject.hooks).to eq([:first, :second])
       end
     end
+
+    context "with required arguments defined" do
+      let(:klass) do
+        Class.new do
+          extend Assembler
+
+          assemble_from :foo
+
+          after_assembly do
+            @foo = :not_missing
+          end
+        end
+      end
+
+      it "doesn't throw ArgumentError if values are set in the after block" do
+        expect { klass.new }.to_not raise_error
+      end
+    end
   end
 end

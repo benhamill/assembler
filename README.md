@@ -44,20 +44,20 @@ block. For example:
 ```ruby
 # These two are equivalent:
 IMAPConnection.new(hostname: 'imap.example.com')
-IMAPConnection.new do |aw|
-  aw.hostname = 'imap.example.com'
+IMAPConnection.new do |builder|
+  builder.hostname = 'imap.example.com'
 end
 
 # These two are equivalent:
 IMAPConnection.new(hostname: 'imap.example.com', use_ssl: false)
-IMAPConnection.new do |aw|
-  aw.hostname = 'imap.example.com'
-  aw.use_ssl = false
+IMAPConnection.new do |builder|
+  builder.hostname = 'imap.example.com'
+  builder.use_ssl = false
 end
 
 # Or you can do a combination, if you need to:
-IMAPConnection.new(hostname: 'imap.example.com') do |aw|
-  aw.use_ssl = false
+IMAPConnection.new(hostname: 'imap.example.com') do |builder|
+  builder.use_ssl = false
 end
 ```
 
@@ -121,25 +121,25 @@ a "standard" ELB.
 ``` ruby
 module ELBFactory
   def self.make_me_an_elb(subnet_ids=nil, availability_zones=nil, name_prefix='', instance_ids=[], security_groups=[])
-    AmazonELB.new do |elb|
-      elb.name = name(name_prefix)
-      elb.load_balancer_name = name(name_prefix)
-      elb.security_groups = security_groups
-      elb.instance_ids = instance_ids
+    AmazonELB.new do |builder|
+      buidler.name = name(name_prefix)
+      builder.load_balancer_name = name(name_prefix)
+      builder.security_groups = security_groups
+      builder.instance_ids = instance_ids
 
-      elb.health_check = HealthCheck.new(
+      builder.health_check = HealthCheck.new(
         target: 'HTTP:8000/',
         healthy_threshold: '3',
         unhealthy_threshold: '5',
         interval: '30',
         timeout: '5'
       )
-      elb.listeners = [Listener.new(...), Listener.new(...)]
+      builder.listeners = [Listener.new(...), Listener.new(...)]
 
       if subnet_ids
-        elb.subnets = subnet_ids
+        builder.subnets = subnet_ids
       else
-        elb.availability_zones = availability_zones
+        builder.availability_zones = availability_zones
       end
     end
   end
@@ -161,6 +161,27 @@ shared between the two cases, or else pre-construct your argument hash, which
 would look similar to the above, but require you to assign an intermediate
 variable for no semantic benefit.
 
+Sometimes you need to tell other objects about yourself, for example if you're
+building a parent-child relationship.  For cases like this, the builder object
+has a method named `assembled_object` which returns the instance being built.
+
+```ruby
+class Parent
+  extend Assembler
+
+  assemble_from :child
+end
+
+class Child
+  extend Assembler
+
+  assemble_from :parent
+end
+
+parent = Parent.new do |builder|
+  builder.child = Child.new(parent: builder.assembled_object)
+end
+```
 
 ### `assemble_from_options`
 
@@ -196,10 +217,10 @@ class IMAPConnection
   assemble_from_options :port, default: nil, coerce: :to_i, aliases: [:host_port]
 end
 
-instance = IMAPConnection.new(hostname: 'localhost') do |b|
-  puts b.hostname   # => '127.0.0.0' - i.e. the accessor returns the coerced value.
-  puts b.use_ssl    # => false - i.e. the accessor returns the default value if none is specified.
-  b.port = '100'    # Will be coerced to the integer 100.
+instance = IMAPConnection.new(hostname: 'localhost') do |builder|
+  puts builder.hostname   # => '127.0.0.0' - i.e. the accessor returns the coerced value.
+  puts builder.use_ssl    # => false - i.e. the accessor returns the default value if none is specified.
+  builder.port = '100'    # Will be coerced to the integer 100.
 end
 
 instance.host_port  # => MethodMissing error - accessors aren't defined for aliases.

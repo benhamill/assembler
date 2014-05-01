@@ -1,4 +1,9 @@
 # Changes
+## UNRELEASED
+
+* Add Builder#assembled_object (Ryan Michael)
+* Allow variables assigned in after blocks to be reflected in missing-value
+  validation (Ryan Michael)
 
 ## 1.2.0
 
