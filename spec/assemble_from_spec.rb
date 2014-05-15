@@ -120,5 +120,33 @@ describe Assembler do
         expect(built_object.instance_variable_get(:@bar)).to eq('qux')
       end
     end
+
+    context "with mutatable defaults" do
+      subject do
+        Class.new do
+          extend Assembler
+
+          assemble_from favorite_things: []
+
+          attr_reader :favorite_things
+        end
+      end
+
+      it "doesn't mutate default values in a way that bleeds across instances" do
+        first_object = subject.new do |builder|
+          builder.favorite_things << :raindrops_on_roses
+          builder.favorite_things << :whiskers_on_kittens
+          builder.favorite_things << :bright_copper_kettles
+          builder.favorite_things << :warm_woolen_mittens
+        end
+
+        second_object = subject.new do |builder|
+          builder.favorite_things << :brown_paper_packages_tied_up_with_strings
+        end
+
+        expect(first_object.favorite_things).to eq([:raindrops_on_roses, :whiskers_on_kittens, :bright_copper_kettles, :warm_woolen_mittens])
+        expect(second_object.favorite_things).to eq([:brown_paper_packages_tied_up_with_strings])
+      end
+    end
   end
 end
